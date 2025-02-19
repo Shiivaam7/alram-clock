@@ -1,0 +1,26 @@
+import { pgTable, text, serial, integer, boolean } from "drizzle-orm/pg-core";
+import { createInsertSchema } from "drizzle-zod";
+import { z } from "zod";
+
+export const alarms = pgTable("alarms", {
+  id: serial("id").primaryKey(),
+  time: text("time").notNull(), // 24hr format HH:mm
+  label: text("label"),
+  sound: text("sound").notNull().default("default"),
+  enabled: boolean("enabled").notNull().default(true),
+});
+
+export const insertAlarmSchema = createInsertSchema(alarms)
+  .omit({ id: true })
+  .extend({
+    time: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, "Invalid time format"),
+  });
+
+export type InsertAlarm = z.infer<typeof insertAlarmSchema>;
+export type Alarm = typeof alarms.$inferSelect;
+
+export const ALARM_SOUNDS = [
+  { id: "default", name: "Default", freq: 440 },
+  { id: "soft", name: "Soft", freq: 330 },
+  { id: "urgent", name: "Urgent", freq: 880 }
+] as const;
